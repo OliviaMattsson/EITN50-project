@@ -7,10 +7,12 @@ Information from Root Sector:
 
 Used Python to read the file in code as well to confirm. 
 
+- Device name: MSDOS5.0
 - Device name: NO NAME
 - Serial Number: 2436b11b (hex) Volume id
 - Filesystem type: Converted to ascii gave FAT12 as file type. 
 - Media descriptor: f0 (Generally set to this value for hard disks)
+- Media descriptor: 1.4 Mb floppy, f0
 - Bytes per sector: Bytes per sector: 0200 (Little Endian), so 512 bytes per sector. 
 - Number of reserved sectors: 1 reserved sector.
 - Number of sectors per allocation: Sectors per cluser: 1 (Standard floppy disk if i'm not mistaken).

@@ -53,7 +53,8 @@ def main():
             print('File Size: '+ fileSize.decode('utf-8'), end='\n')
     
 def printAscii(input):
-    first = input[:2]   
+    first = input[:2]
+    print(first.decode('utf-8'))   
     try:
         if first == b'00':
             return 'Free'
