@@ -10,7 +10,7 @@ def main():
         print('Boot Sector: \n')
         img.seek(0,0)
         data = binascii.hexlify(img.read(61))
-        print(data.decode('utf-8'), end='\n')
+        print(data, end='\n')
         
         print('.. Empty .. \n FAT-table: \n')
         img.seek(512,0)
