@@ -18,11 +18,15 @@ def sector_reader(byte_stream, sector):
 def fat_reader(byte_stream, table=1):
     assert table == 1 or table == 2, 'Invalid table (must be 1 or 2)'
 
+    sector = table
+    if table == 2:
+        sector = 10
+
     def reader(offset):
         even = offset % 2 == 0
 
         offset = (3 * offset) // 2
-        byte_stream.seek(table * 512 + offset)
+        byte_stream.seek(sector * 512 + offset)
         data = byte_stream.read(2)
 
         if even:
