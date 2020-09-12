@@ -22,21 +22,21 @@ def fat_reader(byte_stream, table=1):
         even = offset % 2 == 0
 
         offset = (3 * offset) // 2
-        byte_stream.seek(table * 512 + 3 + offset)
+        byte_stream.seek(table * 512 + offset)
         data = byte_stream.read(2)
 
         if even:
             #    1111 2222 3333 4444
             # -> 4444 1111 2222
 
-            full = data[0]                 # 0000 1111 2222
-            partial = (data[1] & 0xF) << 8 # 4444 0000 0000
+            full = data[0]                  # 0000 1111 2222
+            partial = (data[1] & 0xF) << 8  # 4444 0000 0000
         else:
             #    1111 2222 3333 4444
             # -> 3333 4444 1111
 
-            partial = data[0] >> 4 # 0000 0000 1111
-            full = data[1] << 4    # 3333 4444 0000
+            partial = data[0] >> 4  # 0000 0000 1111
+            full = data[1] << 4     # 3333 4444 0000
 
         return full | partial
 
