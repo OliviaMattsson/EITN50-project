@@ -12,7 +12,7 @@ def walk_dir(img, sector, depth=0):
         file_start = i * 32
 
         filename = r(file_start, 8)
-        if filename[0] == 0 or filename[0] == 0xE5:
+        if filename[0] == 0:
             continue  # Free or unused
 
         if i == 0:
@@ -20,6 +20,9 @@ def walk_dir(img, sector, depth=0):
 
         print()
 
+        if filename[0] == 0xE5:
+            p_indent(f'### DELETED ENTRY')
+            filename = filename[1:]
         p_indent(f'# Bytes                 {file_start}..{file_start + 32}')
 
         attr = dec(r(file_start+11, 1))
@@ -45,7 +48,13 @@ def walk_dir(img, sector, depth=0):
         p_indent(f'Absolute offset         {file_sector * 512}')
         p_indent(f'File size (bytes)       {dec(r(file_start+28, 4))}')
 
-        if is_dir and str(filename).strip() not in ['.', '..']:
+        if not is_dir:
+            file_reader = sector_reader(img, file_sector)
+            first = file_reader(0, 512)
+            if dec(first) == 0:
+                first = '0x00 * 512'
+            p_indent(f'First cluster (512b)    {first}')
+        elif is_dir and str(filename).strip() not in ['.', '..']:
             walk_dir(img, file_sector, depth + 1)
 
 
