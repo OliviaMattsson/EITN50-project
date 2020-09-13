@@ -15,6 +15,13 @@ def walk_dir(img, sector, depth=0):
         if filename[0] == 0 or filename[0] == 0xE5:
             continue  # Free or unused
 
+        if i == 0:
+            p_indent(f'# Sector                {sector}')
+
+        print()
+
+        p_indent(f'# Bytes                 {file_start}..{file_start + 32}')
+
         attr = dec(r(file_start+11, 1))
         is_dir = attr & 0x10
 
@@ -23,9 +30,6 @@ def walk_dir(img, sector, depth=0):
         last_write = readable_datetime(r(file_start+22, 4))
         fat_index = dec(r(file_start+26, 2))
         file_sector = 33 + fat_index - 2
-
-        if i != 0 or depth != 0:
-            print()
 
         if is_dir:
             p_indent(f'Directory name          {str(filename)}')
@@ -47,7 +51,7 @@ def walk_dir(img, sector, depth=0):
 
 def main():
     with open('image.dat', 'rb') as img:
-        for sector in range(19, 32):
+        for sector in range(19, 33):
             walk_dir(img, sector)
 
 
