@@ -22,7 +22,7 @@ def walk_dir(img, sector, depth=0):
         last_accessed = readable_date(r(file_start+18, 2))
         last_write = readable_datetime(r(file_start+22, 4))
         fat_index = dec(r(file_start+26, 2))
-        absolute_offset = 33 + fat_index - 2
+        file_sector = 33 + fat_index - 2
 
         if i != 0 or depth != 0:
             print()
@@ -38,11 +38,11 @@ def walk_dir(img, sector, depth=0):
         p_indent(f'Last accessed           {last_accessed}')
         p_indent(f'Last write              {last_write}')
         p_indent(f"Cluster's chain in FAT  {fat_index}")
-        p_indent(f'Absolute offset         {absolute_offset}')
+        p_indent(f'Absolute offset         {file_sector * 512}')
         p_indent(f'File size (bytes)       {dec(r(file_start+28, 4))}')
 
         if is_dir and str(filename).strip() not in ['.', '..']:
-            walk_dir(img, absolute_offset, depth + 1)
+            walk_dir(img, file_sector, depth + 1)
 
 
 def main():
