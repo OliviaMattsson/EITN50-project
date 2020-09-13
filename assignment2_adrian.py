@@ -29,11 +29,14 @@ def main():
             f = set()
 
             while True:
+                f.add(current)
+
                 if current in range(0xFF8, 0xFFF+1):
-                    print('reached end of file')
+                    clusters = len(f)
+                    bytes = clusters * 512
+                    print(f'eof after {clusters} clusters ({bytes} bytes)')
                     break
 
-                f.add(current)
                 next = fat1(current)
 
                 if next in f:
