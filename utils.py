@@ -50,8 +50,9 @@ def fat_reader(byte_stream, table=1):
 def readable_date(date):
     assert len(date) == 2, "date must be two bytes"
 
-    date1 = date[0]
-    date2 = date[1]
+    # Little endian :@
+    date1 = date[1]
+    date2 = date[0]
 
     years_since_1980 = date1 >> 1
     month_of_year = ((date1 & 0b00000001) << 3) | (date2 >> 5)
@@ -62,8 +63,10 @@ def readable_date(date):
 
 def readable_time(time):
     assert len(time) == 2, "time must be two bytes"
-    time1 = time[0]
-    time2 = time[1]
+
+    # Little endian :@
+    time1 = time[1]
+    time2 = time[0]
 
     hours = time1 >> 3
     minutes = ((time1 & 0b00000111) << 3) | (time2 >> 5)
