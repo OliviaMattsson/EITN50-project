@@ -32,6 +32,11 @@ def walk_dir(img, sector, depth=0):
         last_accessed = readable_date(r(file_start+18, 2))
         last_write = readable_datetime(r(file_start+22, 4))
         fat_index = dec(r(file_start+26, 2))
+
+        if str(filename) == 'GROUP02 ':
+            p_indent('# Invalid FAT chain, increment one')
+            fat_index += 1
+
         file_sector = 33 + fat_index - 2
 
         if is_dir:
