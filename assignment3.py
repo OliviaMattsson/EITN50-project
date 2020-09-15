@@ -25,8 +25,10 @@ def walk_dir(img, sector, depth=0):
             filename = filename[1:]
         p_indent(f'# Bytes                 {file_start}..{file_start + 32}')
 
-        attr = dec(r(file_start+11, 1))
-        is_dir = attr & 0x10
+        attr = r(file_start+11, 1)
+        attr_str = f'{hex(attr)}, {parse_attributes(dec(attr))}'
+
+        is_dir = dec(attr) & 0x10
 
         create_datetime = readable_datetime(r(file_start+14, 4))
         last_accessed = readable_date(r(file_start+18, 2))
@@ -45,7 +47,7 @@ def walk_dir(img, sector, depth=0):
             p_indent(f'File name               {str(filename)}')
             p_indent(f'Extension               {str(r(file_start+8, 3))}')
 
-        p_indent(f'Attributes              {parse_attributes(attr)}')
+        p_indent(f'Attributes              {attr_str}')
         p_indent(f'Creation date           {create_datetime}')
         p_indent(f'Last accessed           {last_accessed}')
         p_indent(f'Last write              {last_write}')
