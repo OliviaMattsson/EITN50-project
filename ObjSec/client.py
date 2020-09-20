@@ -10,7 +10,7 @@ MESSAGE = b"Hello world"
 UDPServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 UDPServerSocket.bind((UDP_IP, UDP_PORT))
 
-# Function for the handshake phase.
+# Function for the handshake phase. Should use ECDHE!
 def handshake():
     return
 

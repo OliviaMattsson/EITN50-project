@@ -60,12 +60,13 @@ Implement an Object Security-based communication adapted for IoT. The following 
   * On the application level. Secure object consists of a header (metadata), a payload (potentially encrypted), and an integrity verification tag. 
 * Provide integrity, confidentiality, and replay protection
   * Integrity: Can be read but not changed. 
-  * Confidentiality: In order for a communication session to provide forward secrecy, the communicating parties can run an Elliptic Curve Diffie-Hellman (ECDH) key exchange protocol with ephemeral keys, from which shared key material can be derived. Ephemeral Diffie-Hellman Over COSE (EDHOC) is a compact and lightweight authenticated Diffie-Hellman key exchange protocol with ephemeral keys. Use for authentication and key exchange. Look on ACE as well, auth framework suitable for IoT. 
-  * Replay protection: 
-* Use UDP as the way to exchange data between the two parties (sending and rceiving party)
+  * Confidentiality: In order for a communication session to provide forward secrecy, the communicating parties can run an Elliptic Curve Diffie-Hellman (ECDH) key exchange protocol with ephemeral keys, from which shared key material can be derived. Diffie-Hellman key exchange with sipher suits Elliptic Curve DHE (ECDHE). ECDHE is the most preferred one for perfect forward secrecy.
+  * Replay protection: Object Security of CoAP (OSCOAP). OSCOAP also provides a binding between the request and the response, securing against replay of previously sent messages, increases security and reduces the message overhead in the response
+* Use UDP as the way to exchange data between the two parties (sending and reciving party)
 * Work on the princple of forward security
-  * See article summary above. 
+  * See article summary above. Diffie-Hellman key exchange with sipher suits Elliptic Curve DHE (ECDHE). ECDHE is the most preferred one for perfect forward secrecy.
 * Should have at leat two distinct parts; handshake and protected data exchange
+  * Handshake: ECDHE. 
 * Actually work when we test in. The data packets should be as small as one can expect for small IoT devices, max 64 bytes 
 * Document and explain the design choices for your implementation
 ### Part B
