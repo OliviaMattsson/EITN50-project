@@ -79,8 +79,27 @@ def handshake(socket):
 
 
 # Function for the transmission phase.
+# Perhaps not needed? Since we have while loop in main method. 
 def transmission(key):
+
+    # Generate iv for each transmission - should be moved to main if function removed!
+    iv = os.urandom(16);
+
+
     return
+
+def encrypt(key, iv):
+
+    # My suggestion is AES. Limited in RAM usage and fast. 
+    # Use nonces for generating the keys. Perhaps already done with the ivs right?
+    # MAC for integrity on transmission
+
+    return
+
+def decrypt():
+
+    return
+
 
 
 if __name__ == "__main__":
