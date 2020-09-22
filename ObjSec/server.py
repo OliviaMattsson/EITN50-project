@@ -18,6 +18,7 @@ def main():
 
 # Function for the handshake phase. Should use ECDHE!
 def handshake():
+    # ECDHE https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ec/?highlight=elliptic#elliptic-curves
     return
 
 

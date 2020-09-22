@@ -1,5 +1,10 @@
 # Object Security
 
+## Rapport: 
+https://www.overleaf.com/7524887658yyqpgjzzwhht
+
+
+
 ## Preparations:
 * Read paper by Selander, obj sec. for IoT ( http://www.eit.lth.se/fileadmin/eit/courses/eitn50/Project_ObjSec/protected/Application_Layer_Security_Protocols_for_IoT.pdf ).
   Summary: IoT devices ar constrained in terms of data rates, memory, power, bandwidth etc. They also have a need for a secure protocol, sine they can contain sensitive data. The demands of constrained devices and networks have led to a demand for new internet protocols. An example that is brought up in the paper is the CoAP, similar to HTTP but adapted to constrained environments. 
