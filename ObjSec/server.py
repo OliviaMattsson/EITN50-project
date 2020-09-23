@@ -22,7 +22,9 @@ def main():
 
         # Dict for the session keys involved
         session_keys = {}
-
+        
+        # Sets the associated data for the transmission:
+        transmission_no = 0
         while True:
             # Receives data from the client
             data, (addr, port) = sock.recvfrom(64)
@@ -57,7 +59,11 @@ def main():
                 message = data[17:]
                 # Decrypts the cyphertext with the iv
                 aesgcm = AESGCM(derived)
-                cleartext = aesgcm.decrypt(iv, message, None)
+
+                # Associated data - to prevent replay attacks
+                transmission_no += 1
+
+                cleartext = aesgcm.decrypt(iv, message, str(transmission_no).encode("utf-8"))
 
                 # Prints the message to the console
                 log("Message from client: ")

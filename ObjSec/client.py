@@ -23,6 +23,9 @@ def main():
 
         # Performs a handshake and gets the private and the derived, symmetric key
         private_key, derived_key = handshake(sock)
+        
+        # Sets the associated data for the transmission:
+        transmission_no = 0
 
         while True:
             data = input("Send: ")
@@ -34,7 +37,12 @@ def main():
             
             # Encrypts the data to cyphertext with the iv and AES GCM
             aesgcm = AESGCM(derived_key)
-            cyphertext = aesgcm.encrypt(iv, data.encode("utf-8"), None)
+
+            
+            # Associated data - to prevent replay attacks
+            transmission_no += 1
+
+            cyphertext = aesgcm.encrypt(iv, data.encode("utf-8"),str(transmission_no).encode("utf-8"))
 
             # 0x02 is the "operation" header
             message = b'\x02' + iv + cyphertext
