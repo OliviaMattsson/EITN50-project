@@ -1,4 +1,6 @@
-from cryptography.hazmat.primitives import hashes, hmac, serialization, padding
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -38,10 +40,17 @@ def main():
                 private, derived = session_keys[(addr, port)]
 
                 iv = data[1:17]
+
+                cipher = Cipher(algorithms.AES(derived), modes.CBC(iv))
+                d = cipher.decryptor()
+
                 message = data[17:]
-                cleartext_message = aes_decrypt(derived, iv, message)
-                
-                log(cleartext_message)
+                decrypted = d.update(message) + d.finalize()
+
+                u = padding.PKCS7(128).unpadder()
+
+                unpadded = u.update(decrypted) + u.finalize()
+                log(unpadded.decode('utf-8'))
 
 
 # Function for the handshake phase. Should use ECDHE!
@@ -64,26 +73,10 @@ def handshake(peer_public_bytes):
     return (private_key, derived_key)
 
 
-def aes_decrypt(key, iv, ciphertext):
-    # MAC for integrity on transmission
+# Function for the transmission phase.
+def transmission():
+    return
 
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    d = cipher.decryptor()
-
-    decrypted = d.update(ciphertext) + d.finalize()
-
-    u = padding.PKCS7(128).unpadder()
-    unpadded = u.update(decrypted) + u.finalize()
-    cleartext = unpadded.decode('utf-8')
-
-    return cleartext
-
-def check_hmac(message, key):
-    h = hmac.HMAC(key, hashes.SHA256())
-    h.update(message)
-    h.verify()
-
-    return message
 
 if __name__ == "__main__":
     main()
