@@ -2,6 +2,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
@@ -19,16 +20,24 @@ def main():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((UDP_IP, UDP_PORT))
 
+        # Dict for the session keys involved
         session_keys = {}
 
         while True:
+            # Receives data from the client
             data, (addr, port) = sock.recvfrom(64)
+
+            # Function to print messages
             def log(m): print(f"{addr}:{port} {m}")
 
+
+            # 0x00 means initial contact - handshake phase initialized
             if data[0] == 0x00:
-                log("[auth]")
+                log("[Authentication started ..]")
                 private, derived = handshake(data[1:])
                 session_keys[(addr, port)] = (private, derived)
+
+                log("[Agreed on session key. ]")
 
                 pub_bytes = private.public_key().public_bytes(
                     encoding=serialization.Encoding.X962,
@@ -36,24 +45,26 @@ def main():
                 )
 
                 sock.sendto(b'\x01' + pub_bytes, (addr, port))
+            
+            # Transmission phase
             else:
+                # Retrieves the session keys
                 private, derived = session_keys[(addr, port)]
 
+                # Retrieves the iv
                 iv = data[1:17]
-
-                cipher = Cipher(algorithms.AES(derived), modes.CBC(iv))
-                d = cipher.decryptor()
-
+                # Retrieves the message
                 message = data[17:]
-                decrypted = d.update(message) + d.finalize()
+                # Decrypts the cyphertext with the iv
+                aesgcm = AESGCM(derived)
+                cleartext = aesgcm.decrypt(iv, message, None)
 
-                u = padding.PKCS7(128).unpadder()
+                # Prints the message to the console
+                log("Message from client: ")
+                log(cleartext.decode('utf-8'))
 
-                unpadded = u.update(decrypted) + u.finalize()
-                log(unpadded.decode('utf-8'))
 
-
-# Function for the handshake phase. Should use ECDHE!
+# Function for the handshake phase. 
 def handshake(peer_public_bytes):
     private_key = ec.generate_private_key(ec.SECP384R1())
     peer_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
@@ -70,12 +81,8 @@ def handshake(peer_public_bytes):
         info=b'handshake data',
     ).derive(shared_key)
 
+    
     return (private_key, derived_key)
-
-
-# Function for the transmission phase.
-def transmission():
-    return
 
 
 if __name__ == "__main__":
