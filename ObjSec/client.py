@@ -1,6 +1,4 @@
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, hmac, serialization, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -8,6 +6,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import os
 import socket
 import sys
+from logging import log
 
 # Constants for UDP transmission
 UDP_IP = "127.0.0.1"
@@ -23,26 +22,15 @@ def main():
 
         private_key, derived_key = handshake(sock)
 
+        def log(m): print(f"{m}")
         while True:
             data = input("Send: ")
 
-            # initialization_vector
-            # They do not need to be kept secret and they can be included in a transmitted message.
-            # Each time something is encrypted a new initialization_vector should be generated.
-            iv = os.urandom(16)
-            cipher = Cipher(algorithms.AES(derived_key), modes.CBC(iv))
-
-            p = padding.PKCS7(128).padder()
-            padded_data = p.update(data.encode('utf-8')) + p.finalize()
-
-            e = cipher.encryptor()
-            encrypted = e.update(padded_data) + e.finalize()
-
-            # 0x02 is the "operation" header
-            message = b'\x02' + iv + encrypted
-
-            assert len(message) < 64, "Message size exceeds 64 bytes"
-            sock.sendall(message)
+            message = aes_encrypt(derived_key, data)
+            
+            hashed_message = derive_hash(derived_key, message)
+            log(hashed_message)
+            # sock.sendall(message)
 
 
 # Function for the handshake phase. Should use ECDHE!
@@ -90,33 +78,30 @@ def transmission(key):
     return
 
 def aes_encrypt(key, message):
-
-    # My suggestion is AES. Limited in RAM usage and fast. 
-    # Use nonces for generating the keys. Perhaps already done with the ivs right?
-    # MAC for integrity on transmission
-
-    # Generate iv for each transmission - should be moved to main if function removed!
-    iv = os.urandom(AES_BLOCKSIZE);
-
-    # Pads the message
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    encryptor = cipher.encryptor()
-
-    # Encrypts the padded message with the key and iv
-    encrypted_message = encryptor.update(message) + encryptor.finalize()
-
-    return (encrypted_message, iv)
-
-def decrypt(key, iv, ciphertext):
+    # initialization_vector
+    # They do not need to be kept secret and they can be included in a transmitted message.
+    # Each time something is encrypted a new initialization_vector should be generated.
+    iv = os.urandom(16)
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
 
-    decryptor = cipher.decryptor()
+    p = padding.PKCS7(128).padder()
+    padded_data = p.update(message.encode('utf-8')) + p.finalize()
 
-    plaintext_message = decryptor.update(ciphertext) + decryptor.finalize()
+    e = cipher.encryptor()
+    encrypted = e.update(padded_data) + e.finalize()
 
-    return plaintext_message
+    # 0x02 is the "operation" header
+    message = b'\x02' + iv + encrypted
 
+    assert len(message) < 64, "Message size exceeds 64 bytes"
 
+    return message
+
+def derive_hash(key, message):
+    h = hmac.HMAC(key, hashes.SHA256())
+    h.update(message)
+    hashvalue =  h.finalize()
+    return hashvalue
 
 if __name__ == "__main__":
     main()
