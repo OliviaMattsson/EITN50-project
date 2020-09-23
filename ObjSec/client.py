@@ -13,8 +13,6 @@ import sys
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
-# Constants for encryption
-AES_BLOCKSIZE = 16
 
 def main():
     # Sets up the socket and binds it to the IP and Port address
@@ -84,37 +82,23 @@ def handshake(socket):
 # Perhaps not needed? Since we have while loop in main method. 
 def transmission(key):
 
-    
+    # Generate iv for each transmission - should be moved to main if function removed!
+    iv = os.urandom(16);
 
 
     return
 
-def aes_encrypt(key, message):
+def encrypt(key, iv):
 
     # My suggestion is AES. Limited in RAM usage and fast. 
     # Use nonces for generating the keys. Perhaps already done with the ivs right?
     # MAC for integrity on transmission
 
-    # Generate iv for each transmission - should be moved to main if function removed!
-    iv = os.urandom(AES_BLOCKSIZE);
+    return
 
-    # Pads the message
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    encryptor = cipher.encryptor()
+def decrypt():
 
-    # Encrypts the padded message with the key and iv
-    encrypted_message = encryptor.update(message) + encryptor.finalize()
-
-    return (encrypted_message, iv)
-
-def decrypt(key, iv, ciphertext):
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-
-    decryptor = cipher.decryptor()
-
-    plaintext_message = decryptor.update(ciphertext) + decryptor.finalize()
-
-    return plaintext_message
+    return
 
 
 
