@@ -2,6 +2,7 @@ from cryptography.hazmat.primitives import hashes, hmac, serialization, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from jose import jwt
 
 import os
 import socket
@@ -12,7 +13,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
 # Constants for decryption
-SIGN_SIZE = 32
+SIGN_KEY_SIZE = hashes.SHA256.digest_size
 AES_KEY_SIZE = 16
 AES_BLOCK_SIZE = 16
 
@@ -22,7 +23,6 @@ def main():
         sock.bind((UDP_IP, UDP_PORT))
 
         session_keys = {}
-
         while True:
             data, (addr, port) = sock.recvfrom(131)
             def log(m): print(f"{addr}:{port} {m}")
@@ -41,16 +41,17 @@ def main():
                 sock.sendto(b'\x01' + pub_bytes, (addr, port))
             else:
                 private, derived = session_keys[(addr, port)]
-                
-                sign_key = data[-SIGN_SIZE:]
-                log(sign_key)
-                data_no_sign = data[:-SIGN_SIZE]
+                crypt_key, sign_key = split_keys(derived)
+                sent_signature = data[-65:]
+                log(len(data))
+                log(sent_signature)
+                data_no_sign = data[:-32]
                 log(data_no_sign)
                 iv = data_no_sign[1:17]
                 message = data_no_sign[17:]
                 
                 try:
-                    check_hmac(message, sign_key, derived)
+                    check_hmac(message, sent_signature, derived)
                     log("Hash authenticated!")
                     return 
                 except:
@@ -95,11 +96,17 @@ def aes_decrypt(key, iv, ciphertext):
 
     return cleartext
 
-def check_hmac(message, sentKey, derivedKey):
-    h = hmac.HMAC(derivedKey, hashes.SHA256())
+def check_hmac(message, sentSign, signKey):
+    h = hmac.HMAC(signKey, hashes.SHA256())
     h.update(message)
-    h.update(message)
-    return h.verify(sentKey)
+    h.verify(sentSign)
+
+
+def split_keys(derived_key):
+    crypt_key = derived_key[:-16]
+    sign_key = derived_key[-16:]
+    return (crypt_key, sign_key)
+
 
 if __name__ == "__main__":
     main()

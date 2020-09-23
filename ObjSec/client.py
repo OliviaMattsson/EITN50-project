@@ -2,6 +2,7 @@ from cryptography.hazmat.primitives import hashes, hmac, serialization, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from jose import jwt
 
 import os
 import socket
@@ -14,7 +15,8 @@ UDP_PORT = 5005
 
 # Constants for encryption
 AES_BLOCKSIZE = 16
-SIGN_SIZE = 32
+AES_KEY_SIZE = 16
+SIGN_KEY_SIZE = hashes.SHA256.digest_size
 
 def main():
     # Sets up the socket and binds it to the IP and Port address
@@ -22,19 +24,20 @@ def main():
         sock.connect((UDP_IP, UDP_PORT))
 
         private_key, derived_key = handshake(sock)
+        (crypt_key, sign_key) = split_keys(derived_key)
 
         def log(m): print(f"{m}")
         while True:
             data = input("Send: ")
-
+         
             message = aes_encrypt(derived_key, data)
 
             signature = derive_hash(derived_key, message)
             log(message)
             log(sys.getsizeof(message))
             log(sys.getsizeof(signature))
-            log(signature)
-            sock.sendall(message + signature)
+            log(message + signature)
+            sock.sendall((message + signature))
 
 
 # Function for the handshake phase. Should use ECDHE!
@@ -97,6 +100,11 @@ def derive_hash(key, message):
     h.update(message)
     hashvalue =  h.finalize()
     return hashvalue
+
+def split_keys(derived_key):
+    crypt_key = derived_key[:-SIGN_KEY_SIZE]
+    sign_key = derived_key[-SIGN_KEY_SIZE:]
+    return (crypt_key, sign_key)
 
 if __name__ == "__main__":
     main()
