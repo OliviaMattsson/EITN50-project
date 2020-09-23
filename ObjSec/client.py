@@ -14,6 +14,7 @@ UDP_PORT = 5005
 
 # Constants for encryption
 AES_BLOCKSIZE = 16
+SIGN_SIZE = 32
 
 def main():
     # Sets up the socket and binds it to the IP and Port address
@@ -27,10 +28,13 @@ def main():
             data = input("Send: ")
 
             message = aes_encrypt(derived_key, data)
-            
-            hashed_message = derive_hash(derived_key, message)
-            log(hashed_message)
-            # sock.sendall(message)
+
+            signature = derive_hash(derived_key, message)
+            log(message)
+            log(sys.getsizeof(message))
+            log(sys.getsizeof(signature))
+            log(signature)
+            sock.sendall(message + signature)
 
 
 # Function for the handshake phase. Should use ECDHE!
@@ -67,15 +71,6 @@ def handshake(socket):
 
     return (private_key, derived_key)
 
-
-# Function for the transmission phase.
-# Perhaps not needed? Since we have while loop in main method. 
-def transmission(key):
-
-    
-
-
-    return
 
 def aes_encrypt(key, message):
     # initialization_vector

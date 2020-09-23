@@ -11,6 +11,10 @@ import sys
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
+# Constants for decryption
+SIGN_SIZE = 32
+AES_KEY_SIZE = 16
+AES_BLOCK_SIZE = 16
 
 def main():
     # Sets up the socket and binds it to the IP and Port address
@@ -20,8 +24,9 @@ def main():
         session_keys = {}
 
         while True:
-            data, (addr, port) = sock.recvfrom(64)
+            data, (addr, port) = sock.recvfrom(131)
             def log(m): print(f"{addr}:{port} {m}")
+            
 
             if data[0] == 0x00:
                 log("[auth]")
@@ -36,12 +41,24 @@ def main():
                 sock.sendto(b'\x01' + pub_bytes, (addr, port))
             else:
                 private, derived = session_keys[(addr, port)]
-
-                iv = data[1:17]
-                message = data[17:]
-                cleartext_message = aes_decrypt(derived, iv, message)
                 
-                log(cleartext_message)
+                sign_key = data[-SIGN_SIZE:]
+                log(sign_key)
+                data_no_sign = data[:-SIGN_SIZE]
+                log(data_no_sign)
+                iv = data_no_sign[1:17]
+                message = data_no_sign[17:]
+                
+                try:
+                    check_hmac(message, sign_key, derived)
+                    log("Hash authenticated!")
+                    return 
+                except:
+                    log("Hash not authenticated..")
+                    return
+                # cleartext_message = aes_decrypt(derived, iv, message)
+                
+                # log(cleartext_message)
 
 
 # Function for the handshake phase. Should use ECDHE!
@@ -78,12 +95,11 @@ def aes_decrypt(key, iv, ciphertext):
 
     return cleartext
 
-def check_hmac(message, key):
-    h = hmac.HMAC(key, hashes.SHA256())
+def check_hmac(message, sentKey, derivedKey):
+    h = hmac.HMAC(derivedKey, hashes.SHA256())
     h.update(message)
-    h.verify()
-
-    return message
+    h.update(message)
+    return h.verify(sentKey)
 
 if __name__ == "__main__":
     main()
