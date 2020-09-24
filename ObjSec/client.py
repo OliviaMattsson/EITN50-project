@@ -42,6 +42,7 @@ def main():
             # Associated data - to prevent replay attacks
             transmission_no += 1
 
+            # Encrypts the data
             cyphertext = aesgcm.encrypt(iv, data.encode("utf-8"),str(transmission_no).encode("utf-8"))
 
             # 0x02 is the "operation" header
@@ -50,21 +51,25 @@ def main():
             # Asserts that the packet is not greater than 64 bytes
             assert len(message) < 64, "Message size exceeds 64 bytes"
 
+            print("[Message encrypted, transmitting to server ..]")
             # Sends the message to the server
             sock.sendall(message)
 
 
 # Function for the handshake phase. Should use ECDHE!
 def handshake(socket):
+    print("[Initiating handshake with the server ..]")
     private_key = ec.generate_private_key(ec.SECP384R1())
 
     public_key = private_key.public_key()
-
     public_bytes = public_key.public_bytes(
         encoding=serialization.Encoding.X962,
         format=serialization.PublicFormat.CompressedPoint,
     )
     data = b'\x00' + public_bytes
+
+    
+    print("[Private and public keys generated. Sending to server ..]")
     socket.sendall(data)
 
     data, (addr, port) = socket.recvfrom(64)
@@ -86,6 +91,7 @@ def handshake(socket):
         info=b'handshake data',
     ).derive(shared_key)
 
+    print("[Session key agreed on. Starting transmission phase ..]")
     return (private_key, derived_key)
 
 

@@ -25,14 +25,18 @@ def main():
         
         # Sets the associated data for the transmission:
         transmission_no = 0
+        
+        
+
+        print("[Server up and running ..]")    
+
         while True:
             # Receives data from the client
             data, (addr, port) = sock.recvfrom(64)
-
+            
             # Function to print messages
             def log(m): print(f"{addr}:{port} {m}")
-
-
+            
             # 0x00 means initial contact - handshake phase initialized
             if data[0] == 0x00:
                 log("[Authentication started ..]")
@@ -50,6 +54,7 @@ def main():
             
             # Transmission phase
             else:
+                log("[Message received. Decryption started ..]")
                 # Retrieves the session keys
                 private, derived = session_keys[(addr, port)]
 
