@@ -22,26 +22,25 @@ def main():
 
         # Dict for the session keys involved
         session_keys = {}
-        
-        # Sets the associated data for the transmission:
-        transmission_no = 0
-        
-        
 
-        print("[Server up and running ..]")    
+        # Sets the associated data for the transmission:
+        transmission_numbers = {}
+
+        print("[Server up and running ..]")
 
         while True:
             # Receives data from the client
             data, (addr, port) = sock.recvfrom(64)
-            
+
             # Function to print messages
             def log(m): print(f"{addr}:{port} {m}")
-            
+
             # 0x00 means initial contact - handshake phase initialized
             if data[0] == 0x00:
                 log("[Authentication started ..]")
                 private, derived = handshake(data[1:])
                 session_keys[(addr, port)] = (private, derived)
+                transmission_numbers[(addr, port)] = 0
 
                 log("[Agreed on session key. ]")
 
@@ -51,7 +50,7 @@ def main():
                 )
 
                 sock.sendto(b'\x01' + pub_bytes, (addr, port))
-            
+
             # Transmission phase
             else:
                 log("[Message received. Decryption started ..]")
@@ -66,16 +65,17 @@ def main():
                 aesgcm = AESGCM(derived)
 
                 # Associated data - to prevent replay attacks
-                transmission_no += 1
+                transmission_numbers[(addr, port)] += 1
 
-                cleartext = aesgcm.decrypt(iv, message, str(transmission_no).encode("utf-8"))
+                cleartext = aesgcm.decrypt(
+                    iv, message, str(transmission_numbers[(addr, port)]).encode("utf-8"))
 
                 # Prints the message to the console
                 log("Message from client: ")
                 log(cleartext.decode('utf-8'))
 
 
-# Function for the handshake phase. 
+# Function for the handshake phase.
 def handshake(peer_public_bytes):
     private_key = ec.generate_private_key(ec.SECP384R1())
     peer_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
@@ -92,7 +92,6 @@ def handshake(peer_public_bytes):
         info=b'handshake data',
     ).derive(shared_key)
 
-    
     return (private_key, derived_key)
 
 
