@@ -23,7 +23,7 @@ def main():
 
         # Performs a handshake and gets the private and the derived, symmetric key
         private_key, derived_key = handshake(sock)
-        
+
         # Sets the associated data for the transmission:
         transmission_no = 0
 
@@ -34,20 +34,20 @@ def main():
             # They do not need to be kept secret and they can be included in a transmitted message.
             # Each time something is encrypted a new initialization_vector should be generated.
             iv = os.urandom(16)
-            
+
             # Encrypts the data to cyphertext with the iv and AES GCM
             aesgcm = AESGCM(derived_key)
 
-            
             # Associated data - to prevent replay attacks
             transmission_no += 1
 
             # Encrypts the data
-            cyphertext = aesgcm.encrypt(iv, data.encode("utf-8"),str(transmission_no).encode("utf-8"))
+            cyphertext = aesgcm.encrypt(iv, data.encode(
+                "utf-8"), str(transmission_no).encode("utf-8"))
 
             # 0x02 is the "operation" header
             message = b'\x02' + iv + cyphertext
-            
+
             # Asserts that the packet is not greater than 64 bytes
             assert len(message) < 64, "Message size exceeds 64 bytes"
 
@@ -68,7 +68,6 @@ def handshake(socket):
     )
     data = b'\x00' + public_bytes
 
-    
     print("[Private and public keys generated. Sending to server ..]")
     socket.sendall(data)
 
@@ -93,7 +92,6 @@ def handshake(socket):
 
     print("[Session key agreed on. Starting transmission phase ..]")
     return (private_key, derived_key)
-
 
 
 if __name__ == "__main__":
