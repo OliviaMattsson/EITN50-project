@@ -38,6 +38,7 @@ why does it exist?
     G: createkey -kt s -pwdp apwd -pwdk gpwd -pwdm gmpwd -ok G -hp D86C163F
     H: identity -la H -pwdo opwd -pwds spwd -ok H
 
+OBS! Keyhandles måste genereras på nytt för nästa försök.
 
 - Make a drawing of the key hierarchy and motivate. 
     All keys will have a parent which must be a storage key. SRK is the one that will be in the top of the hierarchy. 
