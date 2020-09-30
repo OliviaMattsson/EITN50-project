@@ -13,58 +13,77 @@ where ooo and sss are the passwords to the TPM owner and the SRK to take ownersh
     pwdo: opwd
     pwds: spwd
 5. Which TPM command can be used to obtain the SRK public key in SRK.pub format (not PEM!)? Find the command, see appendix, that achieves this and read (public portion of) SRK from the TPM. Hint: handle of the SRK is 40000000
-    `ownerreadinternalpub -hk 40000000 -of srk.pub -pwdo opwd`
+`ownerreadinternalpub -hk 40000000 -of srk.pub -pwdo opwd`
 
 # 3.1 - Key hierarchy
 ## 3.3.2
 1. The identity key is one type of signature key. Describe some differences between an identity
 and a signature key.
-    Signing keys are asymmetric general purpose keys used to sign application data and messages. Signing keys can be migratable or non-migratable. Migratable keys may be exported / imported between TPM devices. The TPM can sign application data and enforce migration restrictions.
 
-    Identity keys are created and controlled by the TPM Owner only. 
+Signing keys are asymmetric general purpose keys used to sign application data and messages. Signing keys can be migratable or non-migratable. Migratable keys may be exported / imported between TPM devices. The TPM can sign application data and enforce migration restrictions.
+
+Identity keys are created and controlled by the TPM Owner only. 
+
 2. Which keys can be used for file encryption?
-    Storage keys :  are asymmetric general purpose keys used to encrypt data or other keys. Storage keys are used for wrapping keys and data managed externally (outside a TPM). 
-3. There is one type of key that exists, but its use is not  recommended. Which key is that, and
-why does it exist?
-    The TPM_KEY_LEGACY key type is to allow for use by applications where both signing and encryption operations occur with the same key.
+
+Storage keys :  are asymmetric general purpose keys used to encrypt data or other keys. Storage keys are used for wrapping keys and data managed externally (outside a TPM). 
+
+3. There is one type of key that exists, but its use is not  recommended. Which key is that, and why does it exist?
+
+The TPM_KEY_LEGACY key type is to allow for use by applications where both signing and encryption operations occur with the same key.
 ## 3.3.3
 - Generate keys according to the table in lab instructions (p.7). Use `createkey` and `identity` commands. 
-    A: createkey -kt e -pwdp spwd -pwdk apwd -ok A -hp 40000000
-    B: createkey -kt e -pwdp apwd -pwdk bpwd -pwdm bmpwd -ok B -hp D86C163F
-    C: createkey -kt s -pwdp bpwd -pwdk cpwd -ok C -hp 0D851F37
-    D: createkey -kt s -pwdp bpwd -pwdk dpwd -pwdm dmpwd -ok D -hp 0D851F37
-    E: createkey -kt b -pwdp bpwd -pwdk epwd -pwdm empwd -ok E -hp 0D851F37
-    F: createkey -kt s -pwdp apwd -pwdk fpwd -ok F -hp D86C163F
-    G: createkey -kt s -pwdp apwd -pwdk gpwd -pwdm gmpwd -ok G -hp D86C163F
-    H: identity -la H -pwdo opwd -pwds spwd -ok H
+
+```
+A: createkey -kt e -pwdp spwd -pwdk apwd -ok A -hp 40000000
+B: createkey -kt e -pwdp apwd -pwdk bpwd -pwdm bmpwd -ok B -hp D86C163F
+C: createkey -kt s -pwdp bpwd -pwdk cpwd -ok C -hp 0D851F37
+D: createkey -kt s -pwdp bpwd -pwdk dpwd -pwdm dmpwd -ok D -hp 0D851F37
+E: createkey -kt b -pwdp bpwd -pwdk epwd -pwdm empwd -ok E -hp 0D851F37
+F: createkey -kt s -pwdp apwd -pwdk fpwd -ok F -hp D86C163F
+G: createkey -kt s -pwdp apwd -pwdk gpwd -pwdm gmpwd -ok G -hp D86C163F
+H: identity -la H -pwdo opwd -pwds spwd -ok H
+```
 
 OBS! Keyhandles måste genereras på nytt för nästa försök.
 
 - Make a drawing of the key hierarchy and motivate. 
-    All keys will have a parent which must be a storage key. SRK is the one that will be in the top of the hierarchy. 
+
+All keys will have a parent which must be a storage key. SRK is the one that will be in the top of the hierarchy. 
     [Example](https://gyazo.com/dd76d5fbea728c57705e5da947363ba5), found [here on page 3](https://shazkhan.files.wordpress.com/2010/10/http__www-trust-rub-de_media_ei_lehrmaterialien_trusted-computing_keyreplication_.pdf)
-- Look at the utility commands
-in the appendix section. The keys can be loaded into the TPM by using the command loadkey. When loading a key keep track of the key handle the TPM gives to the key.
-    A-keyhandle: D86C163F
-    B-keyhandle: 0D851F37
-    C-keyhandle: --NOT WORKING--
-    D-keyhandle: --NOT WORKING--
-    E-keyhandle: E13DCD2D
-    F-keyhandle: E4F7E4A7
-    G-keyhandle: 0E19221C
-    H-keyhandle: 2701AD26
+
+- Look at the utility commands in the appendix section. The keys can be loaded into the TPM by using the command loadkey. When loading a key keep track of the key handle the TPM gives to the key.
+
+```
+A-keyhandle: D86C163F
+B-keyhandle: 0D851F37
+C-keyhandle: --NOT WORKING--
+D-keyhandle: --NOT WORKING--
+E-keyhandle: E13DCD2D
+F-keyhandle: E4F7E4A7
+G-keyhandle: 0E19221C
+H-keyhandle: 2701AD26
+```
 
 # 3.4 - Key migration
 ## 3.4.2
 1. Is it possible for a migratable key to be the parent of a non-migratable key?
-    Not for sign keys with storage key parent. "If parentHandle -> keyFlags -> migratable is TRUE and keyInfo -> keyFlags -> migratable is FALSE then return TPM_INVALID_KEYUSAGE" in TPM_createwrapkey.
-    OK for binding key with storage key parent (E).
+
+Not for sign keys with storage key parent. "If parentHandle -> keyFlags -> migratable is TRUE and keyInfo -> keyFlags -> migratable is FALSE then return TPM_INVALID_KEYUSAGE" in `TPM_createwrapkey`.
+OK for binding key with storage key parent (E).
+
 2. Which command is the first to be executed when performing a key migration?
-    Validate that keyAuth authorizes the use of the key pointed to by maKeyHandle. 
+
+Validate that keyAuth authorizes the use of the key pointed to by maKeyHandle. 
+
 3. Give a short description of the command TPM_ConvertMigrationBlob.
-    Takes a migration blob and creates a normal wrapped blob. Migrates private keys only. Decrypts with the storage key specificed in parentHandle.
+
+Takes a migration blob and creates a normal wrapped blob. Migrates private keys only. Decrypts with the storage key specificed in parentHandle.
+
 4. Which TPM command loads the migrated keys into the TPM?
-    lloadmigrationblob -hp <mig. key handle> -if <mig. blob filename> -pwdp <migration key password> [-rewrap]
+
+loadmigrationblob -hp <mig. key handle> -if <mig. blob filename> -pwdp <migration key password> [-rewrap]
+
 5. Is it the TPM or the TSS that handles the transfer of the migration blob?
 
 
