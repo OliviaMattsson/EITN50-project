@@ -36,12 +36,12 @@ The TPM_KEY_LEGACY key type is to allow for use by applications where both signi
 
 ```
 A: createkey -kt e -pwdp spwd -pwdk apwd -ok A -hp 40000000
-B: createkey -kt e -pwdp apwd -pwdk bpwd -pwdm bmpwd -ok B -hp D86C163F
-C: createkey -kt s -pwdp bpwd -pwdk cpwd -ok C -hp 0D851F37
-D: createkey -kt s -pwdp bpwd -pwdk dpwd -pwdm dmpwd -ok D -hp 0D851F37
-E: createkey -kt b -pwdp bpwd -pwdk epwd -pwdm empwd -ok E -hp 0D851F37
-F: createkey -kt s -pwdp apwd -pwdk fpwd -ok F -hp D86C163F
-G: createkey -kt s -pwdp apwd -pwdk gpwd -pwdm gmpwd -ok G -hp D86C163F
+B: createkey -kt e -pwdp apwd -pwdk bpwd -pwdm bmpwd -ok B -hp A-handle
+C: createkey -kt s -pwdp bpwd -pwdk cpwd -ok C -hp B-handle
+D: createkey -kt s -pwdp bpwd -pwdk dpwd -pwdm dmpwd -ok D -hp B-handle
+E: createkey -kt b -pwdp bpwd -pwdk epwd -pwdm empwd -ok E -hp B-handle
+F: createkey -kt s -pwdp apwd -pwdk fpwd -ok F -hp A-handle
+G: createkey -kt s -pwdp apwd -pwdk gpwd -pwdm gmpwd -ok G -hp A-handle
 H: identity -la H -pwdo opwd -pwds spwd -ok H
 ```
 
@@ -54,15 +54,17 @@ All keys will have a parent which must be a storage key. SRK is the one that wil
 
 - Look at the utility commands in the appendix section. The keys can be loaded into the TPM by using the command loadkey. When loading a key keep track of the key handle the TPM gives to the key.
 
+loadkey -hp 40000000 -ik A.key -pwdp spwd
+
 ```
-A-keyhandle: D86C163F
-B-keyhandle: 0D851F37
-C-keyhandle: --NOT WORKING--
-D-keyhandle: --NOT WORKING--
-E-keyhandle: E13DCD2D
-F-keyhandle: E4F7E4A7
-G-keyhandle: 0E19221C
-H-keyhandle: 2701AD26
+A-keyhandle: 
+B-keyhandle: 
+C-keyhandle: 
+D-keyhandle: 
+E-keyhandle:  
+F-keyhandle: 
+G-keyhandle: 
+H-keyhandle: 
 ```
 
 # 3.4 - Key migration
@@ -99,6 +101,9 @@ Hints: Warning: when working with two TPMs it is advised to do that from differe
 
 ## 3.4.4
 1. Do the above migration and document in your report.
+    cmk_approvema -pwdo opwd -ik B.key -of Bblob
+    "Successfully wrote HMAC and digest to Bblob"
+
 2. There are other ways to migrate keys. When do you use a key of type TPM_KEY_USAGE = TPM_Migrate (Hint: look in [8])
     This SHALL indicate a key in use for TPM_MigrateKey. 
 3. What is the rewrap option of the migrate command used for?
