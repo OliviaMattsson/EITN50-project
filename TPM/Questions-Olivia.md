@@ -1,6 +1,3 @@
-# REPORT LINK:
-https://www.overleaf.com/5587538486dtpmprvtgzbb
-
 # 3.1 - Environment setup
 - Start the TPM1 and TSS and set up the env. variables
 export TCSD_USE_TCP_DEVICE=true
@@ -108,15 +105,37 @@ Hints: Warning: when working with two TPMs it is advised to do that from differe
 
 ## 3.4.4
 1. Do the above migration and document in your report.
-   // Fel va?
-    cmk_approvema -pwdo opwd -ik B.key -of Bblob
-    "Successfully wrote HMAC and digest to Bblob"
-
-migrate -hp 4EED94BC -pwdp apwd -pwdo opwd -hm 86269985 -pwdk bpwd -pwdm bmpwd -ok Bmigrated -ik B.key
-// Wrote migration blob and associated data to file.
-loadmigrationblob -hp 86269985 -if Bmigrated -pwdp 
+Setup om TPM2: 
+- Changed env. variables.
+- Run `tpmbios` and sudo-command on TSS
+- `Ceateek`
+- `takeown -pwdo o2pwd -pwds s2pwd`
+- `ownerreadinternalpub -hk 40000000 -of srk.pub -pwdo o2pwd`
+- create storage key and loadkey: 
+    `createkey -kt e -pwdp s2pwd -pwdk a2pwd -ok A -hp 40000000`
+    `loadkey -hp 40000000 -ik A.key -pwdp s2pwd`
+    A-handle: 57AD82B2
+- `migrate -hp 4EED94BC -pwdp apwd -pwdo opwd -im ../tpm2/A.key -pwdk a2pwd -pwdm bmpwd -ik B.key -ok migrationblob.bin` in TPM1.
+- Cahnged env. variables again
+- `loadmigrationblob -hp 57AD82B2 -pwdp a2pwd -if ../tpm1/migrationblob.bin`
+- "Successfully loaded key into TPM.
+New Key Handle = 559BC96E"
+- Tries with D and E: (Could not create C-key)
+ TPM1: 
+ `migrate -hp 86269985 -pwdp bpwd -pwdo opwd -im ../tpm2/A.key -pwdk a2pwd -pwdm dmpwd -ik D.key -ok Dmigrationblob.bin` 
+ `migrate -hp 86269985 -pwdp bpwd -pwdo opwd -im ../tpm2/A.key -pwdk a2pwd -pwdm empwd -ik E.key -ok Emigrationblob.bin` 
+ TPM2:
+`loadmigrationblob -hp 57AD82B2 -pwdp a2pwd -if ../tpm1/Dmigrationblob.bin`
+`loadmigrationblob -hp 57AD82B2 -pwdp a2pwd -if ../tpm1/Emigrationblob.bin`
+- D worked:
+Successfully loaded key into TPM.
+New Key Handle = 5FF70D03
+- E worked:
+Successfully loaded key into TPM.
+New Key Handle = 37EEB4FE
 
 2. There are other ways to migrate keys. When do you use a key of type TPM_KEY_USAGE = TPM_Migrate (Hint: look in [8])
+    This table defines the types of keys that are possible. Each value defines for what operation the key can be used. Most key usages can be CMKs. See 4.2, TPM_PAYLOAD_TYPE. Each key has a setting defining the encryption and signature scheme to use. The selection of a key usage value limits the choices of encryption and signature schemes.
     This SHALL indicate a key in use for TPM_MigrateKey. 
 3. What is the rewrap option of the migrate command used for?
     Used directly to move the key to a new parent (on either this platform or another). The TPM simply re-encrypts the key using a new parent, and outputs a normal encrypted element that can be subsequently used by a TPM_LoadKey command.
@@ -125,13 +144,21 @@ loadmigrationblob -hp 86269985 -if Bmigrated -pwdp
 # 3.5 - Extending values to PCRs
 ## 3.5.2
 1. Describe one TPM command that can be used to extend a SHA-1 digest to a PCR.
-    TPM_SHA1CompleteExtend - This command is designed to complete a hash sequence and extend a PCR in memory-less environments
+    TPM_SHA1CompleteExtend - This command is designed to complete a hash sequence and extend a PCR in memory-less environments.
+    `sha1 -ic [data] -if [filename] -ix [index for PCR]`
 2. Describe which TPM command that can be used to read a PCR value.
     TPM_PCRRead - returns the current contents of the named register to the caller. 
 
 ## 3.5.3
-- Calculate SHA-1 digest of tpmbios, extend to PCR 11. 
+- Calculate SHA-1 digest of tpmbios, extend to PCR 11.
+ `sha -if /usr/local/sbin/tcsd -ix 11` :
+    SHA1 hash for file '/usr/local/sbin/tcsd': 
+    Hash: c0a2ef976facd5e57c42c4ef46b7675994676b80
+    New value of PCR: 386032bd158a509920c7f4bae157eba2a2891f2
+
 - Type `pcrread` when calculation is done and put it in the report.
+`pcrread -ix 11`:
+Current value of PCR 11: 9386032bd158a509920c7f4bae157eba2a2891f2
 
 # 3.6 - File encryption
 
@@ -139,22 +166,80 @@ loadmigrationblob -hp 86269985 -if Bmigrated -pwdp
 1. Why is TSS_Bind a TSS command, and not a TPM command?
 2. Give some differences between Data binding and Data sealing.
 3. Can a key used for data sealing be migrated to another TPM?
+This structure is created during the TPM_Seal process. The confidential data is encrypted using a non-migratable key. When the TPM_Unseal decrypts this structure the TPM_Unseal uses the public information in the structure to validate the current configuration and release the decrypted data.
 
 ## 3.6.2 Data binding
 - Ceate migratable binding key with `createkey` on TPM1.
+    `createkey -kt b -pwdp apwd -pwdk bindpwd -pwdm bindmpwd -ok Bind -hp 4EED94BC`
 - Encrypt a textfile with the .pem file created, `bindfile`. 
+    `bindfile -ik Bind.pem -if textex.txt -of textexbind`
 - Try to decrypt with `unbindfile`. Note that the command loadkey has to be executed before decryption is possible. Why doesn’t the key have to be loaded inside the TPM when encrypting, but it has to be when decrypting?
+    We need the key handle, so the key needs to be loaded before we can unbind. 
+did: `loadkey -hp 4EED94BC -ik Bind.key -pwdp apwd`
+Got: New Key Handle = 7380D9B3
+Did: `unbindfile -hk 7380D9B3 -if textexbind -of textexunbind -pwdk bindpwd`
+Got: A new file containing the same as the textex.txt
 - Migrate binding key to TPM2 and try to decrypt there too. Explain what happens. 
+    * `migrate -hp 4EED94BC -pwdp apwd -pwdo opwd -im ../tpm2/A.key -pwdk a2pwd -pwdm bindmpwd -ik Bind.key -ok Bindblob.bin` 
+    Wrote migration blob and associated data to file.
+    Changed to TPM2:
+    * `loadmigrationblob -hp 57AD82B2 -pwdp a2pwd -if ../tpm1/Bindblob.bin`
+    Successfully loaded key into TPM.
+    New Key Handle = 6B47297F
+    * `unbindfile -hk 6B47297F -if ../tpm1/textexbind -of textexunbind2 -pwdk bindpwd`
+    Worked!
+
 
 ## 3.6.3 Data sealing
 - Create storage key with `createkey` and `loadkey` into the TPM.
+OBS! Made the keys migratable, doesn't work. Needed to make new ones. 
+`createkey -kt e -pwdp apwd -pwdk storepwd -pwdm storempwd -ok Store -hp 4EED94BC`
+`loadkey -hp 4EED94BC -ik Store.key -pwdp apwd`
+New Key Handle = 45F11BCC
+`createkey -kt l -pwdp apwd -pwdk legpwd -pwdm legmpwd -ok Leg -hp 4EED94BC`
+`loadkey -hp 4EED94BC -ik Leg.key -pwdp apwd`
+New Key Handle = E1678D63
+_____________________________________
+    * createkey -kt e -pwdp apwd -pwdk storepwd -ok StoreNoMig -hp 4EED94BC
+    loadkey -hp 4EED94BC -ik StoreNoMig.key -pwdp apwd
+    New Key Handle = BC24530A
+    * createkey -kt l -pwdp apwd -pwdk legpwd -pwdm legmpwd -ok LegNoMig -hp 4EED94BC
+    loadkey -hp 4EED94BC -ik LegNoMig.key -pwdp apwd
+    New Key Handle = 948DE430
+
+
 - Seal a textfile with `sealfile`.
+    * Store:
+    `sealfile -hk BC24530A -if textex.txt -of textexSealed -pwdk storepwd`
+    Got:
+    OK! 
+    * Legacy:
+    `sealfile -hk 948DE430 -if textex.txt -of textexSealedLeg -pwdk legepwd`
+    Got:
+    Error Invalid key usage from TPM_Seal, the same as when I tried with migratable keys.
+    * Sign:
+    `sealfile -hk 0F55E3C8 -if textex.txt -of textexSealedSign -pwdk fpwd`
+    Got:
+    Error Invalid key usage from TPM_Seal
+    * Bind:
+    `createkey -kt b -pwdp apwd -pwdk bindpwd -ok Bind -hp 4EED94BC`
+    `loadkey -hp 4EED94BC -ik Bind.key -pwdp apwd`
+    New Key Handle = 58FB356C
+    `sealfile -hk 58FB356C -if textex.txt -of textexSealedBind -pwdk bindpwd`
+    Error Invalid key usage from TPM_Seal
+
 - Unseal the file with `unsealfile`.
+    `unsealfile -hk BC24530A -if textexSealed -of textUnsealed -pwdk storepwd`
+    Worked!
+    
 - Test if you can do it with: (Why/why not?)
-    - Legacy key:
-    - Binding key:
-    - Signing key:
+    - Legacy key: Error to seal. 
+    - Binding key: Error with seal. 
+    - Signing key: Error to seal.
 - Migrate the storage key to TPM2 and try to unseal. What happens?
+    According to documentation, you can't have a migratable storage key to seal with:
+    "If the keyHandle points to a migratable key then the TPM MUST return the error code
+    TPM_INVALID_KEY_USAGE.", page 3 of part 3 - Commands. 
 
 # 3.7 TPM Auth
 
