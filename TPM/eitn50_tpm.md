@@ -76,7 +76,7 @@ loadkey -hp $B_HANDLE -ik D.key -pwdp bbb
 D_HANDLE=#out
 
 # E
-createkey -kt b -pwdk ddd -pwdp bbb -pwdm mmm -ok E -hp $B_HANDLE
+createkey -kt b -pwdk eee -pwdp bbb -pwdm mmm -ok E -hp $B_HANDLE
 loadkey -hp $B_HANDLE -ik E.key -pwdp bbb
 E_HANDLE=#out
 
@@ -268,7 +268,7 @@ verifyfile -is ../tpm1/krypt_sign -if ../tpm1/kryptera.txt -ik ../tpm1/G.pem
 ```
 bindfile -ik E.pem -if kryptera.txt -of krypterad_bind
 
-unbindfile -hk $E_HANDLE -if krypterad_bind -of avkrypterad_bind -pwdk ddd
+unbindfile -hk $E_HANDLE -if krypterad_bind -of avkrypterad_bind -pwdk eee
 ```
 
 ## 3.8
