@@ -154,7 +154,7 @@ New Key Handle = 37EEB4FE
  `sha -if /usr/local/sbin/tcsd -ix 11` :
     SHA1 hash for file '/usr/local/sbin/tcsd': 
     Hash: c0a2ef976facd5e57c42c4ef46b7675994676b80
-    New value of PCR: 386032bd158a509920c7f4bae157eba2a2891f2
+    New value of PCR: 9386032bd158a509920c7f4bae157eba2a2891f2
 
 - Type `pcrread` when calculation is done and put it in the report.
 `pcrread -ix 11`:
@@ -174,7 +174,7 @@ This structure is created during the TPM_Seal process. The confidential data is 
 - Encrypt a textfile with the .pem file created, `bindfile`. 
     `bindfile -ik Bind.pem -if textex.txt -of textexbind`
 - Try to decrypt with `unbindfile`. Note that the command loadkey has to be executed before decryption is possible. Why doesn’t the key have to be loaded inside the TPM when encrypting, but it has to be when decrypting?
-    We need the key handle, so the key needs to be loaded before we can unbind. 
+    We need the key handle, so the key needs to be loaded before we can unbind. Asymmetric decryption needs the public key.
 did: `loadkey -hp 4EED94BC -ik Bind.key -pwdp apwd`
 Got: New Key Handle = 7380D9B3
 Did: `unbindfile -hk 7380D9B3 -if textexbind -of textexunbind -pwdk bindpwd`
@@ -187,7 +187,7 @@ Got: A new file containing the same as the textex.txt
     Successfully loaded key into TPM.
     New Key Handle = 6B47297F
     * `unbindfile -hk 6B47297F -if ../tpm1/textexbind -of textexunbind2 -pwdk bindpwd`
-    Worked!
+    Worked! Got the same content in the textfile.
 
 
 ## 3.6.3 Data sealing
